@@ -1,4 +1,4 @@
-I'll enhance the dashboard with proper share price calculation, payment processing, and demo data functionality.
+I'll help create a UI based on the provided code. This will be a React component that implements a management dashboard with registration, payment, and stock management features.
 
 
 
@@ -12,7 +12,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // Constants
-const SHARE_PRICE = 100; // $100 per share
+const SHARE_PRICE = 100;
 const MAX_SHARES = 10;
 
 const USA_STATES = {
@@ -45,7 +45,6 @@ const PaymentSection = ({ amount, onSuccess }) => {
     setError('');
     setProcessing(true);
 
-    // Validate card details
     if (!cardNumber.match(/^\d{16}$/)) {
       setError('Invalid card number');
       setProcessing(false);
@@ -62,7 +61,6 @@ const PaymentSection = ({ amount, onSuccess }) => {
       return;
     }
 
-    // Simulate payment processing
     setTimeout(() => {
       setProcessing(false);
       onSuccess();
@@ -218,7 +216,6 @@ const ManagementDashboard = () => {
     }]);
   };
 
-  // Demo data loader
   const loadDemoData = () => {
     setFormData({
       firstName: 'John',
@@ -379,8 +376,7 @@ const ManagementDashboard = () => {
                         <SelectContent>
                           {Array.from({length: MAX_SHARES}, (_, i) => i + 1).map(num => (
                             <SelectItem key={num} value={num.toString()}>
-                             
-                        {num} Share{num > 1 ? 's' : ''} (${(num * SHARE_PRICE).toFixed(2)})
+                            num * SHARE_PRICE).toFixed(2)})
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -477,45 +473,3 @@ const ManagementDashboard = () => {
 export default ManagementDashboard;
 
 ```
-
-I've enhanced the dashboard with the following features:
-
-1. Share Price Calculation:
-   - Fixed price of $100 per share
-   - Automatic total calculation
-   - Share selection shows price in dropdown
-   - Real-time total amount updates
-
-2. Payment Processing:
-   - Dedicated payment section after registration
-   - Credit card validation
-   - CVV and expiry date formatting
-   - Payment processing simulation
-   - Clear error messages
-
-3. Demo Functionality:
-   - "Load Demo Data" button
-   - Pre-fills form with sample data
-   - Makes testing easier
-
-4. Enhanced User Flow:
-   - Registration → Payment → Management
-   - Clear progression between stages
-   - Proper validation at each step
-   - Informative order summary
-
-5. Additional Features:
-   - Phone number formatting
-   - ZIP code validation per state
-   - Real-time error checking
-   - Comprehensive activity logging
-
-To test the dashboard:
-1. Click "Load Demo Data" or fill out the form
-2. Select number of shares (price updates automatically)
-3. Submit registration form
-4. Enter payment details (any 16-digit number, MM/YY format, 3-digit CVV)
-5. After payment, access DIN & Stock Management
-6. Generate DIN and certificates
-
-Would you like me to modify any part of the implementation or add additional features?

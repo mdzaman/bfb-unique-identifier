@@ -38,6 +38,49 @@ I'll provide a step-by-step guide to help you set up and run this React applicat
    npx shadcn-ui@latest init
    ```
    - When prompted, accept the default options
+  
+This error occurs because the `shadcn-ui` CLI isn't installed globally. Let's fix this step by step:
+
+1. First, let's try installing shadcn-ui using npx directly:
+```bash
+npx shadcn-ui@latest init
+```
+
+If that doesn't work, we can try these alternative steps:
+
+2. Install shadcn-ui globally:
+```bash
+npm install -g shadcn-ui
+```
+
+If you still get permission errors, you might need to use sudo:
+```bash
+sudo npm install -g shadcn-ui
+```
+
+3. If you're still having issues, let's try the full package name:
+```bash
+npx @shadcn/ui@latest init
+```
+
+4. If none of the above work, we can try cleaning npm cache and reinstalling:
+```bash
+npm cache clean --force
+npm install
+npx @shadcn/ui@latest init
+```
+
+Which of these would you like to try first? Let me know what error message you get, and I can provide more specific guidance.
+
+Also, make sure you're in your project directory when running these commands. You can check your current directory with:
+```bash
+pwd
+```
+
+
+
+
+
 
 5. Install the required shadcn/ui components:
    ```bash

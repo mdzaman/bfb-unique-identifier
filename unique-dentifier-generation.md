@@ -1,4 +1,4 @@
-I'll modify the dashboard to work with mock data so it can be demonstrated without an API.
+I'll enhance the dashboard with proper share price calculation, payment processing, and demo data functionality.
 
 
 
@@ -11,363 +11,236 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-// Mock Data
-const MOCK_COUNTRIES = [
-  { id: '1', name: 'United States', phone_code: '1' },
-  { id: '2', name: 'United Kingdom', phone_code: '44' },
-  { id: '3', name: 'Canada', phone_code: '1' },
-  { id: '4', name: 'Australia', phone_code: '61' }
-];
+// Constants
+const SHARE_PRICE = 100; // $100 per share
+const MAX_SHARES = 10;
 
-const MOCK_STATES = {
-  '1': [
-    { id: '1', name: 'California' },
-    { id: '2', name: 'New York' },
-    { id: '3', name: 'Texas' }
-  ],
-  '2': [
-    { id: '4', name: 'England' },
-    { id: '5', name: 'Scotland' },
-    { id: '6', name: 'Wales' }
-  ]
+const USA_STATES = {
+  "CA": {
+    name: "California",
+    cities: ["Los Angeles", "San Francisco", "San Diego", "Sacramento"],
+    zipCodePattern: "^9[0-6]\\d{3}$"
+  },
+  "NY": {
+    name: "New York",
+    cities: ["New York City", "Buffalo", "Albany", "Rochester"],
+    zipCodePattern: "^1[0-4]\\d{3}$"
+  },
+  "TX": {
+    name: "Texas",
+    cities: ["Houston", "Austin", "Dallas", "San Antonio"],
+    zipCodePattern: "^7[5-9]\\d{3}$"
+  }
 };
 
-const MOCK_CITIES = {
-  '1': [
-    { id: '1', name: 'Los Angeles' },
-    { id: '2', name: 'San Francisco' },
-    { id: '3', name: 'San Diego' }
-  ],
-  '2': [
-    { id: '4', name: 'New York City' },
-    { id: '5', name: 'Buffalo' },
-    { id: '6', name: 'Albany' }
-  ]
-};
+const PaymentSection = ({ amount, onSuccess }) => {
+  const [cardNumber, setCardNumber] = useState('');
+  const [expiry, setExpiry] = useState('');
+  const [cvv, setCvv] = useState('');
+  const [processing, setProcessing] = useState(false);
+  const [error, setError] = useState('');
 
-const DINManagement = ({ userId }) => {
-  const [din, setDin] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState('');
-
-  const generateDIN = async () => {
-    setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      const mockDIN = `DIN${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
-      setDin(mockDIN);
-      setMessage('DIN generated successfully');
-      setIsLoading(false);
-    }, 1000);
-  };
-
-  return (
-    <div className="space-y-4">
-      {din ? (
-        <Alert>
-          <AlertDescription>DIN: {din}</AlertDescription>
-        </Alert>
-      ) : (
-        <Button onClick={generateDIN} disabled={isLoading}>
-          {isLoading ? 'Generating...' : 'Generate DIN'}
-        </Button>
-      )}
-      {message && (
-        <Alert>
-          <AlertDescription>{message}</AlertDescription>
-        </Alert>
-      )}
-    </div>
-  );
-};
-
-const StockCertificateManagement = ({ userId, shareCount }) => {
-  const [certificates, setCertificates] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState('');
-
-  const generateCertificates = async () => {
-    setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      const mockCertificates = Array(shareCount).fill(null).map((_, index) => ({
-        id: index + 1,
-        certificateNumber: `CERT-${Math.random().toString(36).substr(2, 6).toUpperCase()}`
-      }));
-      setCertificates(mockCertificates);
-      setMessage('Certificates generated successfully');
-      setIsLoading(false);
-    }, 1500);
-  };
-
-  return (
-    <div className="space-y-4">
-      {certificates.length > 0 ? (
-        <div className="space-y-2">
-          {certificates.map((cert, index) => (
-            <Alert key={cert.id}>
-              <AlertDescription>
-                Certificate #{index + 1}: {cert.certificateNumber}
-              </AlertDescription>
-            </Alert>
-          ))}
-        </div>
-      ) : (
-        <Button onClick={generateCertificates} disabled={isLoading}>
-          {isLoading ? 'Generating...' : 'Generate Certificates'}
-        </Button>
-      )}
-      {message && (
-        <Alert>
-          <AlertDescription>{message}</AlertDescription>
-        </Alert>
-      )}
-    </div>
-  );
-};
-
-const RegistrationForm = ({ onRegistrationSuccess }) => {
-  const [formData, setFormData] = useState({
-    first_name: '',
-    middle_name: '',
-    last_name: '',
-    phone_country_code: '',
-    phone_number: '',
-    email: '',
-    street_address: '',
-    apartment: '',
-    address_line2: '',
-    country_id: '',
-    state_id: '',
-    city_id: '',
-    postal_code: ''
-  });
-
-  const [states, setStates] = useState([]);
-  const [cities, setCities] = useState([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [message, setMessage] = useState('');
-  const [errors, setErrors] = useState({});
-
-  // Load states when country changes
-  useEffect(() => {
-    if (formData.country_id) {
-      setStates(MOCK_STATES[formData.country_id] || []);
-      setFormData(prev => ({ ...prev, state_id: '', city_id: '' }));
-      setCities([]);
-    }
-  }, [formData.country_id]);
-
-  // Load cities when state changes
-  useEffect(() => {
-    if (formData.state_id) {
-      setCities(MOCK_CITIES[formData.state_id] || []);
-      setFormData(prev => ({ ...prev, city_id: '' }));
-    }
-  }, [formData.state_id]);
-
-  const validateForm = () => {
-    const newErrors = {};
-    if (!formData.first_name) newErrors.first_name = 'First name is required';
-    if (!formData.last_name) newErrors.last_name = 'Last name is required';
-    if (!formData.email) newErrors.email = 'Email is required';
-    if (!formData.phone_number) newErrors.phone_number = 'Phone number is required';
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
-    
-    setIsSubmitting(true);
-    // Simulate API call
+    setError('');
+    setProcessing(true);
+
+    // Validate card details
+    if (!cardNumber.match(/^\d{16}$/)) {
+      setError('Invalid card number');
+      setProcessing(false);
+      return;
+    }
+    if (!expiry.match(/^\d{2}\/\d{2}$/)) {
+      setError('Invalid expiry date');
+      setProcessing(false);
+      return;
+    }
+    if (!cvv.match(/^\d{3}$/)) {
+      setError('Invalid CVV');
+      setProcessing(false);
+      return;
+    }
+
+    // Simulate payment processing
     setTimeout(() => {
-      const mockUser = {
-        id: Math.random().toString(36).substr(2, 9),
-        ...formData
-      };
-      onRegistrationSuccess(mockUser);
-      setMessage('Registration successful!');
-      setIsSubmitting(false);
-    }, 1000);
+      setProcessing(false);
+      onSuccess();
+    }, 2000);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Input
-            placeholder="First Name"
-            value={formData.first_name}
-            onChange={e => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
-            className={errors.first_name ? 'border-red-500' : ''}
-          />
-          {errors.first_name && (
-            <span className="text-sm text-red-500">{errors.first_name}</span>
-          )}
-        </div>
-        
-        <Input
-          placeholder="Middle Name (Optional)"
-          value={formData.middle_name}
-          onChange={e => setFormData(prev => ({ ...prev, middle_name: e.target.value }))}
-        />
-        
-        <div>
-          <Input
-            placeholder="Last Name"
-            value={formData.last_name}
-            onChange={e => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
-            className={errors.last_name ? 'border-red-500' : ''}
-          />
-          {errors.last_name && (
-            <span className="text-sm text-red-500">{errors.last_name}</span>
-          )}
-        </div>
+    <div className="space-y-4">
+      <div className="bg-blue-50 p-4 rounded-lg mb-4">
+        <p className="text-lg font-medium">Total Amount: ${amount.toFixed(2)}</p>
       </div>
-
-      <div className="space-y-4">
-        <div className="grid grid-cols-3 gap-4">
-          <Select
-            value={formData.phone_country_code}
-            onValueChange={value => setFormData(prev => ({ ...prev, phone_country_code: value }))}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Code" />
-            </SelectTrigger>
-            <SelectContent>
-              {MOCK_COUNTRIES.map(country => (
-                <SelectItem key={country.id} value={country.phone_code}>
-                  +{country.phone_code}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <div className="col-span-2">
-            <Input
-              placeholder="Phone Number"
-              value={formData.phone_number}
-              onChange={e => setFormData(prev => ({ ...prev, phone_number: e.target.value }))}
-              className={errors.phone_number ? 'border-red-500' : ''}
-            />
-            {errors.phone_number && (
-              <span className="text-sm text-red-500">{errors.phone_number}</span>
-            )}
-          </div>
-        </div>
-
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <Input
-            placeholder="Email Address"
-            type="email"
-            value={formData.email}
-            onChange={e => setFormData(prev => ({ ...prev, email: e.target.value }))}
-            className={errors.email ? 'border-red-500' : ''}
+            placeholder="Card Number"
+            value={cardNumber}
+            onChange={(e) => setCardNumber(e.target.value.replace(/\D/g, '').slice(0, 16))}
+            className="font-mono"
           />
-          {errors.email && (
-            <span className="text-sm text-red-500">{errors.email}</span>
-          )}
         </div>
-
-        <Input
-          placeholder="Street Address"
-          value={formData.street_address}
-          onChange={e => setFormData(prev => ({ ...prev, street_address: e.target.value }))}
-        />
-
-        <Input
-          placeholder="Apartment (Optional)"
-          value={formData.apartment}
-          onChange={e => setFormData(prev => ({ ...prev, apartment: e.target.value }))}
-        />
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Select
-            value={formData.country_id}
-            onValueChange={value => setFormData(prev => ({ ...prev, country_id: value }))}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select Country" />
-            </SelectTrigger>
-            <SelectContent>
-              {MOCK_COUNTRIES.map(country => (
-                <SelectItem key={country.id} value={country.id}>{country.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select
-            value={formData.state_id}
-            onValueChange={value => setFormData(prev => ({ ...prev, state_id: value }))}
-            disabled={!states.length}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select State" />
-            </SelectTrigger>
-            <SelectContent>
-              {states.map(state => (
-                <SelectItem key={state.id} value={state.id}>{state.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select
-            value={formData.city_id}
-            onValueChange={value => setFormData(prev => ({ ...prev, city_id: value }))}
-            disabled={!cities.length}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select City" />
-            </SelectTrigger>
-            <SelectContent>
-              {cities.map(city => (
-                <SelectItem key={city.id} value={city.id}>{city.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
+        <div className="grid grid-cols-2 gap-4">
           <Input
-            placeholder="Postal Code"
-            value={formData.postal_code}
-            onChange={e => setFormData(prev => ({ ...prev, postal_code: e.target.value }))}
+            placeholder="MM/YY"
+            value={expiry}
+            onChange={(e) => {
+              let value = e.target.value.replace(/\D/g, '');
+              if (value.length >= 2) {
+                value = value.slice(0, 2) + '/' + value.slice(2, 4);
+              }
+              setExpiry(value);
+            }}
+            maxLength={5}
+          />
+          <Input
+            placeholder="CVV"
+            value={cvv}
+            onChange={(e) => setCvv(e.target.value.replace(/\D/g, '').slice(0, 3))}
+            maxLength={3}
+            type="password"
           />
         </div>
-      </div>
-
-      <Button type="submit" className="w-full" disabled={isSubmitting}>
-        {isSubmitting ? 'Registering...' : 'Register'}
-      </Button>
-
-      {message && (
-        <Alert>
-          <AlertDescription>{message}</AlertDescription>
-        </Alert>
-      )}
-    </form>
+        {error && <p className="text-red-500 text-sm">{error}</p>}
+        <Button type="submit" className="w-full" disabled={processing}>
+          {processing ? 'Processing...' : `Pay $${amount.toFixed(2)}`}
+        </Button>
+      </form>
+    </div>
   );
 };
 
 const ManagementDashboard = () => {
-  const [activeUser, setActiveUser] = useState(null);
-  const [paymentStatus, setPaymentStatus] = useState(null);
-  const [shareCount, setShareCount] = useState(1);
-  const [paymentAmount, setPaymentAmount] = useState(100);
+  const [formData, setFormData] = useState({
+    firstName: '',
+    middleName: '',
+    lastName: '',
+    phoneCode: '1',
+    phoneNumber: '',
+    email: '',
+    address: '',
+    state: '',
+    city: '',
+    zipCode: ''
+  });
+  
+  const [shares, setShares] = useState(1);
+  const [totalAmount, setTotalAmount] = useState(SHARE_PRICE);
+  const [cities, setCities] = useState([]);
+  const [errors, setErrors] = useState({});
+  const [registrationComplete, setRegistrationComplete] = useState(false);
+  const [paymentComplete, setPaymentComplete] = useState(false);
+  const [din, setDin] = useState('');
+  const [certificates, setCertificates] = useState([]);
+  const [activities, setActivities] = useState([]);
+  const [lastDinSequence, setLastDinSequence] = useState(1);
+  const [lastCertSequence, setLastCertSequence] = useState(1);
+  const [showPayment, setShowPayment] = useState(false);
 
-  const handlePayment = async () => {
-    // Simulate payment processing
-    setTimeout(() => {
-      setPaymentStatus('success');
-    }, 1000);
+  useEffect(() => {
+    setTotalAmount(shares * SHARE_PRICE);
+  }, [shares]);
+
+  useEffect(() => {
+    if (formData.state) {
+      setCities(USA_STATES[formData.state]?.cities || []);
+    }
+  }, [formData.state]);
+
+  const validateForm = () => {
+    const newErrors = {};
+    if (!formData.firstName) newErrors.firstName = 'First name is required';
+    if (!formData.lastName) newErrors.lastName = 'Last name is required';
+    if (!formData.phoneNumber) newErrors.phoneNumber = 'Phone number is required';
+    if (!/^\d{10}$/.test(formData.phoneNumber)) newErrors.phoneNumber = 'Invalid phone number';
+    if (!formData.email) newErrors.email = 'Email is required';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'Invalid email';
+    if (!formData.state) newErrors.state = 'State is required';
+    if (!formData.city) newErrors.city = 'City is required';
+    if (!formData.zipCode) newErrors.zipCode = 'ZIP code is required';
+    if (formData.state && !new RegExp(USA_STATES[formData.state].zipCodePattern).test(formData.zipCode)) {
+      newErrors.zipCode = `Invalid ZIP code for ${USA_STATES[formData.state].name}`;
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (validateForm()) {
+      setRegistrationComplete(true);
+      setShowPayment(true);
+      addActivity('Registration completed');
+    }
+  };
+
+  const handlePaymentSuccess = () => {
+    setPaymentComplete(true);
+    setShowPayment(false);
+    addActivity(`Payment processed: $${totalAmount.toFixed(2)} for ${shares} shares`);
+  };
+
+  const generateDIN = () => {
+    const countryCode = formData.phoneCode.padStart(3, '0');
+    const sequence = lastDinSequence.toString().padStart(7, '0');
+    const newDin = `${countryCode}${sequence}`;
+    setDin(newDin);
+    setLastDinSequence(prev => prev + 1);
+    addActivity('DIN generated');
+  };
+
+  const generateCertificates = () => {
+    const newCertificates = Array(shares).fill(null).map((_, index) => {
+      const sequence = (lastCertSequence + index).toString().padStart(3, '0');
+      return `SEC${sequence}`;
+    });
+    setCertificates(newCertificates);
+    setLastCertSequence(prev => prev + shares);
+    addActivity('Stock certificates generated');
+  };
+
+  const addActivity = (description) => {
+    const timestamp = new Date();
+    setActivities(prev => [...prev, {
+      description,
+      timestamp,
+      formattedTime: new Intl.DateTimeFormat('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      }).format(timestamp)
+    }]);
+  };
+
+  // Demo data loader
+  const loadDemoData = () => {
+    setFormData({
+      firstName: 'John',
+      middleName: 'Robert',
+      lastName: 'Doe',
+      phoneCode: '1',
+      phoneNumber: '4155552671',
+      email: 'john.doe@example.com',
+      address: '123 Market Street',
+      state: 'CA',
+      city: 'San Francisco',
+      zipCode: '94105'
+    });
+    setShares(3);
   };
 
   return (
     <div className="container mx-auto p-4">
       <Tabs defaultValue="registration" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="registration">User Registration</TabsTrigger>
-          <TabsTrigger value="management" disabled={!activeUser || paymentStatus !== 'success'}>
+          <TabsTrigger value="registration">Registration & Payment</TabsTrigger>
+          <TabsTrigger value="management" disabled={!paymentComplete}>
             DIN & Stock Management
           </TabsTrigger>
         </TabsList>
@@ -375,51 +248,167 @@ const ManagementDashboard = () => {
         <TabsContent value="registration">
           <Card>
             <CardContent className="pt-6">
-              <RegistrationForm onRegistrationSuccess={setActiveUser} />
-              
-              {activeUser && paymentStatus !== 'success' && (
-                <div className="mt-6 space-y-4 border-t pt-4">
-                  <h3 className="text-lg font-medium">Share Purchase</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <Select
-                      value={shareCount.toString()}
-                      onValueChange={(value) => {
-                        const count = parseInt(value);
-                        setShareCount(count);
-                        setPaymentAmount(count * 100);
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select shares" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {[...Array(10)].map((_, i) => (
-                          <SelectItem key={i + 1} value={(i + 1).toString()}>
-                            {i + 1} {i === 0 ? 'Share' : 'Shares'}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-
+              {!showPayment ? (
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="flex justify-end">
+                    <Button type="button" variant="outline" onClick={loadDemoData}>
+                      Load Demo Data
+                    </Button>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Input
+                        placeholder="First Name"
+                        value={formData.firstName}
+                        onChange={e => setFormData({...formData, firstName: e.target.value})}
+                        className={errors.firstName ? "border-red-500" : ""}
+                      />
+                      {errors.firstName && <span className="text-red-500 text-sm">{errors.firstName}</span>}
+                    </div>
                     <Input
-                      value={`$${paymentAmount.toFixed(2)}`}
-                      disabled
-                      className="bg-gray-50"
+                      placeholder="Middle Name (Optional)"
+                      value={formData.middleName}
+                      onChange={e => setFormData({...formData, middleName: e.target.value})}
                     />
+                    <div>
+                      <Input
+                        placeholder="Last Name"
+                        value={formData.lastName}
+                        onChange={e => setFormData({...formData, lastName: e.target.value})}
+                        className={errors.lastName ? "border-red-500" : ""}
+                      />
+                      {errors.lastName && <span className="text-red-500 text-sm">{errors.lastName}</span>}
+                    </div>
                   </div>
 
-                  <Button onClick={handlePayment} className="w-full">
-                    Process Payment
-                  </Button>
-                </div>
-              )}
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-3 gap-4">
+                      <Select
+                        value={formData.phoneCode}
+                        onValueChange={(value) => setFormData({...formData, phoneCode: value})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Code" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">+1</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <div className="col-span-2">
+                        <Input
+                          placeholder="Phone Number"
+                          value={formData.phoneNumber}
+                          onChange={e => setFormData({...formData, phoneNumber: e.target.value.replace(/\D/g, '')})}
+                          className={errors.phoneNumber ? "border-red-500" : ""}
+                          maxLength={10}
+                        />
+                        {errors.phoneNumber && <span className="text-red-500 text-sm">{errors.phoneNumber}</span>}
+                      </div>
+                    </div>
 
-              {paymentStatus === 'success' && (
-                <Alert className="mt-4">
-                  <AlertDescription>
-                    Payment successful! You can now proceed to DIN & Stock Management.
-                  </AlertDescription>
-                </Alert>
+                    <div>
+                      <Input
+                        placeholder="Email Address"
+                        type="email"
+                        value={formData.email}
+                        onChange={e => setFormData({...formData, email: e.target.value})}
+                        className={errors.email ? "border-red-500" : ""}
+                      />
+                      {errors.email && <span className="text-red-500 text-sm">{errors.email}</span>}
+                    </div>
+
+                    <Input
+                      placeholder="Address"
+                      value={formData.address}
+                      onChange={e => setFormData({...formData, address: e.target.value})}
+                    />
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <Select
+                        value={formData.state}
+                        onValueChange={(value) => setFormData({...formData, state: value, city: ''})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select State" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(USA_STATES).map(([code, state]) => (
+                            <SelectItem key={code} value={code}>{state.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      <Select
+                        value={formData.city}
+                        onValueChange={(value) => setFormData({...formData, city: value})}
+                        disabled={!formData.state}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select City" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {cities.map(city => (
+                            <SelectItem key={city} value={city}>{city}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      <div>
+                        <Input
+                          placeholder="ZIP Code"
+                          value={formData.zipCode}
+                          onChange={e => setFormData({...formData, zipCode: e.target.value})}
+                          className={errors.zipCode ? "border-red-500" : ""}
+                        />
+                        {errors.zipCode && <span className="text-red-500 text-sm">{errors.zipCode}</span>}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 border-t pt-4">
+                    <h3 className="text-lg font-medium">Share Purchase</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <Select 
+                        value={shares.toString()} 
+                        onValueChange={(value) => setShares(parseInt(value))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select shares" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.from({length: MAX_SHARES}, (_, i) => i + 1).map(num => (
+                            <SelectItem key={num} value={num.toString()}>
+                             
+                        {num} Share{num > 1 ? 's' : ''} (${(num * SHARE_PRICE).toFixed(2)})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Input 
+                        value={`$${totalAmount.toFixed(2)}`} 
+                        disabled 
+                        className="bg-gray-50 font-medium"
+                      />
+                    </div>
+                    <Button type="submit" className="w-full">Proceed to Payment</Button>
+                  </div>
+                </form>
+              ) : (
+                <div className="space-y-6">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="font-medium mb-2">Order Summary</h3>
+                    <div className="space-y-1 text-sm">
+                      <p>Shares: {shares}</p>
+                      <p>Price per Share: ${SHARE_PRICE.toFixed(2)}</p>
+                      <p className="font-medium">Total Amount: ${totalAmount.toFixed(2)}</p>
+                    </div>
+                  </div>
+                  <PaymentSection 
+                    amount={totalAmount} 
+                    onSuccess={handlePaymentSuccess}
+                  />
+                </div>
               )}
             </CardContent>
           </Card>
@@ -430,40 +419,49 @@ const ManagementDashboard = () => {
             <CardContent className="space-y-6 pt-6">
               <div className="bg-gray-50 p-4 rounded-lg">
                 <h3 className="font-medium mb-2">User Details</h3>
-                <div className="space-y-1">
-                  <p className="text-sm">
-                    Name: {activeUser?.first_name} {activeUser?.middle_name ? `${activeUser.middle_name} ` : ''}{activeUser?.last_name}
-                  </p>
-                  <p className="text-sm">Email: {activeUser?.email}</p>
-                  <p className="text-sm">Phone: +{activeUser?.phone_country_code} {activeUser?.phone_number}</p>
-                  <p className="text-sm">Shares Purchased: {shareCount}</p>
-                  <p className="text-sm">Total Investment: ${paymentAmount.toFixed(2)}</p>
+                <div className="space-y-1 text-sm">
+                  <p>Name: {formData.firstName} {formData.middleName} {formData.lastName}</p>
+                  <p>Email: {formData.email}</p>
+                  <p>Phone: +{formData.phoneCode} {formData.phoneNumber}</p>
+                  <p>Address: {formData.address}, {formData.city}, {USA_STATES[formData.state]?.name}, {formData.zipCode}</p>
+                  <p>Shares Purchased: {shares}</p>
+                  <p>Total Investment: ${totalAmount.toFixed(2)}</p>
                 </div>
               </div>
 
               <div className="border-t pt-4">
                 <h3 className="font-medium mb-4">DIN Management</h3>
-                <DINManagement userId={activeUser?.id} />
+                {din ? (
+                  <Alert>
+                    <AlertDescription className="font-mono">{din}</AlertDescription>
+                  </Alert>
+                ) : (
+                  <Button onClick={generateDIN}>Generate DIN</Button>
+                )}
               </div>
 
               <div className="border-t pt-4">
                 <h3 className="font-medium mb-4">Stock Certificates</h3>
-                <StockCertificateManagement 
-                  userId={activeUser?.id}
-                  shareCount={shareCount}
-                />
+                {certificates.length > 0 ? (
+                  <div className="space-y-2">
+                    {certificates.map((cert, index) => (
+                      <Alert key={index}>
+                        <AlertDescription className="font-mono">{cert}</AlertDescription>
+                      </Alert>
+                    ))}
+                  </div>
+                ) : (
+                  <Button onClick={generateCertificates}>Generate Certificates</Button>
+                )}
               </div>
 
               <div className="border-t pt-4">
                 <h3 className="font-medium mb-4">Activity Timeline</h3>
                 <div className="space-y-2">
-                  {[
-                    { date: new Date().toLocaleDateString(), action: 'Registration completed' },
-                    { date: new Date().toLocaleDateString(), action: `Payment processed for ${shareCount} shares` },
-                  ].map((activity, index) => (
+                  {activities.map((activity, index) => (
                     <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                      <span className="text-sm">{activity.action}</span>
-                      <span className="text-xs text-gray-500">{activity.date}</span>
+                      <span className="text-sm">{activity.description}</span>
+                      <span className="text-xs text-gray-500">{activity.formattedTime}</span>
                     </div>
                   ))}
                 </div>
@@ -480,4 +478,44 @@ export default ManagementDashboard;
 
 ```
 
+I've enhanced the dashboard with the following features:
 
+1. Share Price Calculation:
+   - Fixed price of $100 per share
+   - Automatic total calculation
+   - Share selection shows price in dropdown
+   - Real-time total amount updates
+
+2. Payment Processing:
+   - Dedicated payment section after registration
+   - Credit card validation
+   - CVV and expiry date formatting
+   - Payment processing simulation
+   - Clear error messages
+
+3. Demo Functionality:
+   - "Load Demo Data" button
+   - Pre-fills form with sample data
+   - Makes testing easier
+
+4. Enhanced User Flow:
+   - Registration → Payment → Management
+   - Clear progression between stages
+   - Proper validation at each step
+   - Informative order summary
+
+5. Additional Features:
+   - Phone number formatting
+   - ZIP code validation per state
+   - Real-time error checking
+   - Comprehensive activity logging
+
+To test the dashboard:
+1. Click "Load Demo Data" or fill out the form
+2. Select number of shares (price updates automatically)
+3. Submit registration form
+4. Enter payment details (any 16-digit number, MM/YY format, 3-digit CVV)
+5. After payment, access DIN & Stock Management
+6. Generate DIN and certificates
+
+Would you like me to modify any part of the implementation or add additional features?

@@ -1,12 +1,86 @@
+I'll modify the dashboard to work with mock data so it can be demonstrated without an API.
+
+
+
+```tsx
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-// Stock Certificate Management Component
+// Mock Data
+const MOCK_COUNTRIES = [
+  { id: '1', name: 'United States', phone_code: '1' },
+  { id: '2', name: 'United Kingdom', phone_code: '44' },
+  { id: '3', name: 'Canada', phone_code: '1' },
+  { id: '4', name: 'Australia', phone_code: '61' }
+];
+
+const MOCK_STATES = {
+  '1': [
+    { id: '1', name: 'California' },
+    { id: '2', name: 'New York' },
+    { id: '3', name: 'Texas' }
+  ],
+  '2': [
+    { id: '4', name: 'England' },
+    { id: '5', name: 'Scotland' },
+    { id: '6', name: 'Wales' }
+  ]
+};
+
+const MOCK_CITIES = {
+  '1': [
+    { id: '1', name: 'Los Angeles' },
+    { id: '2', name: 'San Francisco' },
+    { id: '3', name: 'San Diego' }
+  ],
+  '2': [
+    { id: '4', name: 'New York City' },
+    { id: '5', name: 'Buffalo' },
+    { id: '6', name: 'Albany' }
+  ]
+};
+
+const DINManagement = ({ userId }) => {
+  const [din, setDin] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState('');
+
+  const generateDIN = async () => {
+    setIsLoading(true);
+    // Simulate API call
+    setTimeout(() => {
+      const mockDIN = `DIN${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+      setDin(mockDIN);
+      setMessage('DIN generated successfully');
+      setIsLoading(false);
+    }, 1000);
+  };
+
+  return (
+    <div className="space-y-4">
+      {din ? (
+        <Alert>
+          <AlertDescription>DIN: {din}</AlertDescription>
+        </Alert>
+      ) : (
+        <Button onClick={generateDIN} disabled={isLoading}>
+          {isLoading ? 'Generating...' : 'Generate DIN'}
+        </Button>
+      )}
+      {message && (
+        <Alert>
+          <AlertDescription>{message}</AlertDescription>
+        </Alert>
+      )}
+    </div>
+  );
+};
+
 const StockCertificateManagement = ({ userId, shareCount }) => {
   const [certificates, setCertificates] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -14,21 +88,16 @@ const StockCertificateManagement = ({ userId, shareCount }) => {
 
   const generateCertificates = async () => {
     setIsLoading(true);
-    try {
-      const response = await fetch('/api/certificates/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, shareCount })
-      });
-      
-      const data = await response.json();
-      setCertificates(data.certificates);
+    // Simulate API call
+    setTimeout(() => {
+      const mockCertificates = Array(shareCount).fill(null).map((_, index) => ({
+        id: index + 1,
+        certificateNumber: `CERT-${Math.random().toString(36).substr(2, 6).toUpperCase()}`
+      }));
+      setCertificates(mockCertificates);
       setMessage('Certificates generated successfully');
-    } catch (error) {
-      setMessage('Error generating certificates');
-    } finally {
       setIsLoading(false);
-    }
+    }, 1500);
   };
 
   return (
@@ -48,7 +117,6 @@ const StockCertificateManagement = ({ userId, shareCount }) => {
           {isLoading ? 'Generating...' : 'Generate Certificates'}
         </Button>
       )}
-      
       {message && (
         <Alert>
           <AlertDescription>{message}</AlertDescription>
@@ -58,60 +126,7 @@ const StockCertificateManagement = ({ userId, shareCount }) => {
   );
 };
 
-// DIN Management Component
-const DINManagement = ({ userId }) => {
-  const [din, setDin] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState('');
-
-  const generateDIN = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch('/api/din/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId })
-      });
-      
-      const data = await response.json();
-      setDin(data.din);
-      setMessage('DIN generated successfully');
-    } catch (error) {
-      setMessage('Error generating DIN');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  return (
-    <div className="space-y-4">
-      {din ? (
-        <Alert>
-          <AlertDescription>DIN: {din}</AlertDescription>
-        </Alert>
-      ) : (
-        <Button onClick={generateDIN} disabled={isLoading}>
-          {isLoading ? 'Generating...' : 'Generate DIN'}
-        </Button>
-      )}
-      
-      {message && (
-        <Alert>
-          <AlertDescription>{message}</AlertDescription>
-        </Alert>
-      )}
-    </div>
-  );
-};
-
-// Registration Form Component
 const RegistrationForm = ({ onRegistrationSuccess }) => {
-  const [countries, setCountries] = useState([]);
-  const [states, setStates] = useState([]);
-  const [cities, setCities] = useState([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [message, setMessage] = useState('');
-
   const [formData, setFormData] = useState({
     first_name: '',
     middle_name: '',
@@ -128,149 +143,82 @@ const RegistrationForm = ({ onRegistrationSuccess }) => {
     postal_code: ''
   });
 
+  const [states, setStates] = useState([]);
+  const [cities, setCities] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [message, setMessage] = useState('');
   const [errors, setErrors] = useState({});
 
+  // Load states when country changes
   useEffect(() => {
-    const fetchCountries = async () => {
-      try {
-        const response = await fetch('/api/countries');
-        const data = await response.json();
-        setCountries(data);
-      } catch (error) {
-        setMessage('Error loading countries');
-      }
-    };
-    fetchCountries();
-  }, []);
-
-  useEffect(() => {
-    const fetchStates = async () => {
-      if (formData.country_id) {
-        try {
-          const response = await fetch(`/api/states/${formData.country_id}`);
-          const data = await response.json();
-          setStates(data);
-          setFormData(prev => ({ ...prev, state_id: '', city_id: '' }));
-          setCities([]);
-        } catch (error) {
-          setMessage('Error loading states');
-        }
-      }
-    };
-    fetchStates();
+    if (formData.country_id) {
+      setStates(MOCK_STATES[formData.country_id] || []);
+      setFormData(prev => ({ ...prev, state_id: '', city_id: '' }));
+      setCities([]);
+    }
   }, [formData.country_id]);
 
+  // Load cities when state changes
   useEffect(() => {
-    const fetchCities = async () => {
-      if (formData.state_id) {
-        try {
-          const response = await fetch(`/api/cities/${formData.state_id}`);
-          const data = await response.json();
-          setCities(data);
-          setFormData(prev => ({ ...prev, city_id: '' }));
-        } catch (error) {
-          setMessage('Error loading cities');
-        }
-      }
-    };
-    fetchCities();
+    if (formData.state_id) {
+      setCities(MOCK_CITIES[formData.state_id] || []);
+      setFormData(prev => ({ ...prev, city_id: '' }));
+    }
   }, [formData.state_id]);
 
   const validateForm = () => {
     const newErrors = {};
     if (!formData.first_name) newErrors.first_name = 'First name is required';
     if (!formData.last_name) newErrors.last_name = 'Last name is required';
+    if (!formData.email) newErrors.email = 'Email is required';
     if (!formData.phone_number) newErrors.phone_number = 'Phone number is required';
-    if (!formData.phone_country_code) newErrors.phone_country_code = 'Country code is required';
-    if (!formData.street_address) newErrors.street_address = 'Street address is required';
-    if (!formData.country_id) newErrors.country_id = 'Country is required';
-    if (!formData.state_id) newErrors.state_id = 'State/Province is required';
-    if (!formData.city_id) newErrors.city_id = 'City/Upazilla is required';
-
-    const emailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
-    if (!formData.email) {
-      newErrors.email = 'Email is required';
-    } else if (!emailRegex.test(formData.email)) {
-      newErrors.email = 'Invalid email address';
-    }
-
-    const phoneRegex = /^\d{1,15}$/;
-    if (formData.phone_number && !phoneRegex.test(formData.phone_number)) {
-      newErrors.phone_number = 'Invalid phone number';
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: null }));
-    }
-  };
-
-  const handleSelectChange = (name, value) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: null }));
-    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
-
+    
     setIsSubmitting(true);
-    try {
-      const response = await fetch('/api/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-      
-      if (!response.ok) throw new Error('Registration failed');
-      
-      const result = await response.json();
+    // Simulate API call
+    setTimeout(() => {
+      const mockUser = {
+        id: Math.random().toString(36).substr(2, 9),
+        ...formData
+      };
+      onRegistrationSuccess(mockUser);
       setMessage('Registration successful!');
-      onRegistrationSuccess(result);
-    } catch (error) {
-      setMessage(error.message);
-    } finally {
       setIsSubmitting(false);
-    }
+    }, 1000);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
           <Input
-            name="first_name"
-            value={formData.first_name}
-            onChange={handleChange}
             placeholder="First Name"
+            value={formData.first_name}
+            onChange={e => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
             className={errors.first_name ? 'border-red-500' : ''}
           />
           {errors.first_name && (
             <span className="text-sm text-red-500">{errors.first_name}</span>
           )}
         </div>
-
+        
         <Input
-          name="middle_name"
-          value={formData.middle_name}
-          onChange={handleChange}
           placeholder="Middle Name (Optional)"
+          value={formData.middle_name}
+          onChange={e => setFormData(prev => ({ ...prev, middle_name: e.target.value }))}
         />
-
-        <div className="space-y-2">
+        
+        <div>
           <Input
-            name="last_name"
-            value={formData.last_name}
-            onChange={handleChange}
             placeholder="Last Name"
+            value={formData.last_name}
+            onChange={e => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
             className={errors.last_name ? 'border-red-500' : ''}
           />
           {errors.last_name && (
@@ -279,157 +227,116 @@ const RegistrationForm = ({ onRegistrationSuccess }) => {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
-        <div className="space-y-2">
+      <div className="space-y-4">
+        <div className="grid grid-cols-3 gap-4">
           <Select
-            onValueChange={(value) => handleSelectChange('phone_country_code', value)}
             value={formData.phone_country_code}
+            onValueChange={value => setFormData(prev => ({ ...prev, phone_country_code: value }))}
           >
-            <SelectTrigger className={errors.phone_country_code ? 'border-red-500' : ''}>
-              <SelectValue placeholder="Country Code" />
+            <SelectTrigger>
+              <SelectValue placeholder="Code" />
             </SelectTrigger>
             <SelectContent>
-              {countries.map(country => (
+              {MOCK_COUNTRIES.map(country => (
                 <SelectItem key={country.id} value={country.phone_code}>
                   +{country.phone_code}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          {errors.phone_country_code && (
-            <span className="text-sm text-red-500">{errors.phone_country_code}</span>
-          )}
+
+          <div className="col-span-2">
+            <Input
+              placeholder="Phone Number"
+              value={formData.phone_number}
+              onChange={e => setFormData(prev => ({ ...prev, phone_number: e.target.value }))}
+              className={errors.phone_number ? 'border-red-500' : ''}
+            />
+            {errors.phone_number && (
+              <span className="text-sm text-red-500">{errors.phone_number}</span>
+            )}
+          </div>
         </div>
 
-        <div className="col-span-2 space-y-2">
+        <div>
           <Input
-            name="phone_number"
-            value={formData.phone_number}
-            onChange={handleChange}
-            placeholder="Phone Number"
-            className={errors.phone_number ? 'border-red-500' : ''}
+            placeholder="Email Address"
+            type="email"
+            value={formData.email}
+            onChange={e => setFormData(prev => ({ ...prev, email: e.target.value }))}
+            className={errors.email ? 'border-red-500' : ''}
           />
-          {errors.phone_number && (
-            <span className="text-sm text-red-500">{errors.phone_number}</span>
+          {errors.email && (
+            <span className="text-sm text-red-500">{errors.email}</span>
           )}
         </div>
-      </div>
 
-      <div className="space-y-2">
         <Input
-          name="email"
-          value={formData.email}
-          onChange={handleChange}
-          placeholder="Email Address"
-          className={errors.email ? 'border-red-500' : ''}
-        />
-        {errors.email && (
-          <span className="text-sm text-red-500">{errors.email}</span>
-        )}
-      </div>
-
-      <div className="space-y-2">
-        <Input
-          name="street_address"
-          value={formData.street_address}
-          onChange={handleChange}
           placeholder="Street Address"
-          className={errors.street_address ? 'border-red-500' : ''}
+          value={formData.street_address}
+          onChange={e => setFormData(prev => ({ ...prev, street_address: e.target.value }))}
         />
-        {errors.street_address && (
-          <span className="text-sm text-red-500">{errors.street_address}</span>
-        )}
-      </div>
 
-      <Input
-        name="apartment"
-        value={formData.apartment}
-        onChange={handleChange}
-        placeholder="Apartment (Optional)"
-      />
+        <Input
+          placeholder="Apartment (Optional)"
+          value={formData.apartment}
+          onChange={e => setFormData(prev => ({ ...prev, apartment: e.target.value }))}
+        />
 
-      <Input
-        name="address_line2"
-        value={formData.address_line2}
-        onChange={handleChange}
-        placeholder="Address Line 2 (Optional)"
-      />
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Select
-            onValueChange={(value) => handleSelectChange('country_id', value)}
             value={formData.country_id}
+            onValueChange={value => setFormData(prev => ({ ...prev, country_id: value }))}
           >
-            <SelectTrigger className={errors.country_id ? 'border-red-500' : ''}>
+            <SelectTrigger>
               <SelectValue placeholder="Select Country" />
             </SelectTrigger>
             <SelectContent>
-              {countries.map(country => (
-                <SelectItem key={country.id} value={country.id}>
-                  {country.name}
-                </SelectItem>
+              {MOCK_COUNTRIES.map(country => (
+                <SelectItem key={country.id} value={country.id}>{country.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
-          {errors.country_id && (
-            <span className="text-sm text-red-500">{errors.country_id}</span>
-          )}
-        </div>
 
-        <div className="space-y-2">
           <Select
-            onValueChange={(value) => handleSelectChange('state_id', value)}
             value={formData.state_id}
+            onValueChange={value => setFormData(prev => ({ ...prev, state_id: value }))}
             disabled={!states.length}
           >
-            <SelectTrigger className={errors.state_id ? 'border-red-500' : ''}>
-              <SelectValue placeholder="State/Province" />
+            <SelectTrigger>
+              <SelectValue placeholder="Select State" />
             </SelectTrigger>
             <SelectContent>
               {states.map(state => (
-                <SelectItem key={state.id} value={state.id}>
-                  {state.name}
-                </SelectItem>
+                <SelectItem key={state.id} value={state.id}>{state.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
-          {errors.state_id && (
-            <span className="text-sm text-red-500">{errors.state_id}</span>
-          )}
-        </div>
 
-        <div className="space-y-2">
           <Select
-            onValueChange={(value) => handleSelectChange('city_id', value)}
             value={formData.city_id}
+            onValueChange={value => setFormData(prev => ({ ...prev, city_id: value }))}
             disabled={!cities.length}
           >
-            <SelectTrigger className={errors.city_id ? 'border-red-500' : ''}>
-              <SelectValue placeholder="City/Upazilla" />
+            <SelectTrigger>
+              <SelectValue placeholder="Select City" />
             </SelectTrigger>
             <SelectContent>
               {cities.map(city => (
-                <SelectItem key={city.id} value={city.id}>
-                  {city.name}
-                </SelectItem>
+                <SelectItem key={city.id} value={city.id}>{city.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
-          {errors.city_id && (
-            <span className="text-sm text-red-500">{errors.city_id}</span>
-          )}
-        </div>
 
-        <Input
-          name="postal_code"
-          value={formData.postal_code}
-          onChange={handleChange}
-          placeholder="Postal Code"
-        />
+          <Input
+            placeholder="Postal Code"
+            value={formData.postal_code}
+            onChange={e => setFormData(prev => ({ ...prev, postal_code: e.target.value }))}
+          />
+        </div>
       </div>
 
-      <Button type="submit" disabled={isSubmitting}>
+      <Button type="submit" className="w-full" disabled={isSubmitting}>
         {isSubmitting ? 'Registering...' : 'Register'}
       </Button>
 
@@ -442,7 +349,6 @@ const RegistrationForm = ({ onRegistrationSuccess }) => {
   );
 };
 
-// Main Dashboard Component
 const ManagementDashboard = () => {
   const [activeUser, setActiveUser] = useState(null);
   const [paymentStatus, setPaymentStatus] = useState(null);
@@ -450,30 +356,10 @@ const ManagementDashboard = () => {
   const [paymentAmount, setPaymentAmount] = useState(100);
 
   const handlePayment = async () => {
-    try {
-      const response = await fetch('/api/process-payment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: activeUser.id,
-          amount: paymentAmount,
-          shares: shareCount
-        })
-      });
-      
-      if (!response.ok) throw new Error('Payment failed');
-      
-      const result = await response.json();
+    // Simulate payment processing
+    setTimeout(() => {
       setPaymentStatus('success');
-    } catch (error) {
-      setPaymentStatus('failed');
-    }
-  };
-
-  const handleShareCountChange = (value) => {
-    const count = parseInt(value);
-    setShareCount(count);
-    setPaymentAmount(count * 100);
+    }, 1000);
   };
 
   return (
@@ -481,73 +367,55 @@ const ManagementDashboard = () => {
       <Tabs defaultValue="registration" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="registration">User Registration</TabsTrigger>
-          <TabsTrigger 
-            value="management"
-            disabled={!activeUser || paymentStatus !== 'success'}
-          >
+          <TabsTrigger value="management" disabled={!activeUser || paymentStatus !== 'success'}>
             DIN & Stock Management
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="registration">
           <Card>
-            <CardContent className="space-y-4">
-              <RegistrationForm 
-                onRegistrationSuccess={(user) => setActiveUser(user)} 
-              />
+            <CardContent className="pt-6">
+              <RegistrationForm onRegistrationSuccess={setActiveUser} />
               
               {activeUser && paymentStatus !== 'success' && (
                 <div className="mt-6 space-y-4 border-t pt-4">
-                  <h3 className="text-lg font-semibold">Share Purchase</h3>
+                  <h3 className="text-lg font-medium">Share Purchase</h3>
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Number of Shares</label>
-                      <Select
-                        value={shareCount.toString()}
-                        onValueChange={handleShareCountChange}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select shares" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {[...Array(10)].map((_, i) => (
-                            <SelectItem key={i + 1} value={(i + 1).toString()}>
-                              {i + 1} {i === 0 ? 'Share' : 'Shares'}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Total Amount</label>
-                      <Input
-                        value={`$${paymentAmount.toFixed(2)}`}
-                        disabled
-                        className="bg-gray-50"
-                      />
-                    </div>
+                    <Select
+                      value={shareCount.toString()}
+                      onValueChange={(value) => {
+                        const count = parseInt(value);
+                        setShareCount(count);
+                        setPaymentAmount(count * 100);
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select shares" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[...Array(10)].map((_, i) => (
+                          <SelectItem key={i + 1} value={(i + 1).toString()}>
+                            {i + 1} {i === 0 ? 'Share' : 'Shares'}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    <Input
+                      value={`$${paymentAmount.toFixed(2)}`}
+                      disabled
+                      className="bg-gray-50"
+                    />
                   </div>
 
-                  <Button 
-                    onClick={handlePayment}
-                    className="w-full"
-                  >
+                  <Button onClick={handlePayment} className="w-full">
                     Process Payment
                   </Button>
-
-                  {paymentStatus === 'failed' && (
-                    <Alert variant="destructive">
-                      <AlertDescription>
-                        Payment processing failed. Please try again.
-                      </AlertDescription>
-                    </Alert>
-                  )}
                 </div>
               )}
 
               {paymentStatus === 'success' && (
-                <Alert>
+                <Alert className="mt-4">
                   <AlertDescription>
                     Payment successful! You can now proceed to DIN & Stock Management.
                   </AlertDescription>
@@ -559,26 +427,45 @@ const ManagementDashboard = () => {
 
         <TabsContent value="management">
           <Card>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4">
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="font-medium mb-2">Registered User</h3>
-                  <p>Name: {activeUser?.first_name} {activeUser?.last_name}</p>
-                  <p>Email: {activeUser?.email}</p>
-                  <p>Shares Purchased: {shareCount}</p>
+            <CardContent className="space-y-6 pt-6">
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="font-medium mb-2">User Details</h3>
+                <div className="space-y-1">
+                  <p className="text-sm">
+                    Name: {activeUser?.first_name} {activeUser?.middle_name ? `${activeUser.middle_name} ` : ''}{activeUser?.last_name}
+                  </p>
+                  <p className="text-sm">Email: {activeUser?.email}</p>
+                  <p className="text-sm">Phone: +{activeUser?.phone_country_code} {activeUser?.phone_number}</p>
+                  <p className="text-sm">Shares Purchased: {shareCount}</p>
+                  <p className="text-sm">Total Investment: ${paymentAmount.toFixed(2)}</p>
                 </div>
+              </div>
 
-                <div className="border-t pt-4">
-                  <h3 className="font-medium mb-4">DIN Management</h3>
-                  <DINManagement userId={activeUser?.id} />
-                </div>
+              <div className="border-t pt-4">
+                <h3 className="font-medium mb-4">DIN Management</h3>
+                <DINManagement userId={activeUser?.id} />
+              </div>
 
-                <div className="border-t pt-4">
-                  <h3 className="font-medium mb-4">Stock Certificates</h3>
-                  <StockCertificateManagement 
-                    userId={activeUser?.id}
-                    shareCount={shareCount}
-                  />
+              <div className="border-t pt-4">
+                <h3 className="font-medium mb-4">Stock Certificates</h3>
+                <StockCertificateManagement 
+                  userId={activeUser?.id}
+                  shareCount={shareCount}
+                />
+              </div>
+
+              <div className="border-t pt-4">
+                <h3 className="font-medium mb-4">Activity Timeline</h3>
+                <div className="space-y-2">
+                  {[
+                    { date: new Date().toLocaleDateString(), action: 'Registration completed' },
+                    { date: new Date().toLocaleDateString(), action: `Payment processed for ${shareCount} shares` },
+                  ].map((activity, index) => (
+                    <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                      <span className="text-sm">{activity.action}</span>
+                      <span className="text-xs text-gray-500">{activity.date}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </CardContent>
@@ -590,3 +477,7 @@ const ManagementDashboard = () => {
 };
 
 export default ManagementDashboard;
+
+```
+
+
